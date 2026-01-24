@@ -156,6 +156,16 @@ view_with_tool() {
                 return
             fi
             ;;
+        toml)
+            if has_cmd bat; then
+                if [[ -n "$file" ]]; then
+                    bat -n --language=toml "$file"
+                else
+                    echo "$content" | bat -n --language=toml
+                fi
+                return
+            fi
+            ;;
         csv)
             if has_cmd column && has_cmd bat; then
                 if [[ -n "$file" ]]; then
