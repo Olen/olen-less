@@ -82,6 +82,9 @@ extension_to_type() {
         sh|bash|zsh)
             echo "shell"
             ;;
+        tmpl)
+            echo "tmpl"
+            ;;
         *)
             echo "unknown"
             ;;
@@ -199,6 +202,47 @@ view_with_tool() {
                     bat -n --language="$lang" "$file"
                 else
                     echo "$content" | bat -n --language="$lang"
+                fi
+                return
+            fi
+            ;;
+        tmpl)
+            if has_cmd bat; then
+                # Strip .tmpl to get the underlying filename
+                local base_name="${file%.tmpl}"
+                local base_ext="${base_name##*.}"
+                local lang=""
+
+                # Check if base has a recognizable extension (not just a dotfile)
+                if [[ "$base_name" != "$base_ext" && "$base_name" != ".$base_ext" ]]; then
+                    lang="${base_ext,,}"
+                    # Map common extensions to bat language names
+                    case "$lang" in
+                        yml) lang="yaml" ;;
+                        py) lang="python" ;;
+                        md) lang="markdown" ;;
+                        sh|bash|zsh) lang="sh" ;;
+                    esac
+                fi
+
+                # If no extension, use chezmoi to detect from processed content
+                if [[ -z "$lang" ]] && has_cmd chezmoi; then
+                    local processed
+                    processed=$(chezmoi execute-template < "$file" 2>/dev/null)
+                    local detected_type
+                    detected_type=$(detect_content_type "$processed")
+                    case "$detected_type" in
+                        json) lang="json" ;;
+                        markdown) lang="markdown" ;;
+                        xml) lang="xml" ;;
+                        yaml) lang="yaml" ;;
+                    esac
+                fi
+
+                if [[ -n "$lang" ]]; then
+                    bat -n --language="$lang" "$file"
+                else
+                    bat -n "$file"
                 fi
                 return
             fi
