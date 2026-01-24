@@ -64,6 +64,9 @@ extension_to_type() {
         json|jsonl)
             echo "json"
             ;;
+        toml)
+            echo "toml"
+            ;;
         xml|xsl|xslt|svg|xhtml)
             echo "xml"
             ;;
@@ -112,9 +115,9 @@ view_with_tool() {
                 return
             elif has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    bat --style=plain --language=md "$file"
+                    bat -n --language=md "$file"
                 else
-                    echo "$content" | bat --style=plain --language=md
+                    echo "$content" | bat -n --language=md
                 fi
                 return
             fi
@@ -122,9 +125,9 @@ view_with_tool() {
         xml)
             if has_cmd xmllint && has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    xmllint --format "$file" 2>/dev/null | bat --style=plain --language=xml || less "$file"
+                    xmllint --format "$file" 2>/dev/null | bat -n --language=xml || less "$file"
                 else
-                    echo "$content" | xmllint --format - 2>/dev/null | bat --style=plain --language=xml || echo "$content" | less
+                    echo "$content" | xmllint --format - 2>/dev/null | bat -n --language=xml || echo "$content" | less
                 fi
                 return
             elif has_cmd xmllint; then
@@ -146,9 +149,9 @@ view_with_tool() {
                 return
             elif has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    bat --style=plain --language=yaml "$file"
+                    bat -n --language=yaml "$file"
                 else
-                    echo "$content" | bat --style=plain --language=yaml
+                    echo "$content" | bat -n --language=yaml
                 fi
                 return
             fi
@@ -183,9 +186,9 @@ view_with_tool() {
                 local lang="$content_type"
                 [[ "$lang" == "shell" ]] && lang="sh"
                 if [[ -n "$file" ]]; then
-                    bat --style=plain --language="$lang" "$file"
+                    bat -n --language="$lang" "$file"
                 else
-                    echo "$content" | bat --style=plain --language="$lang"
+                    echo "$content" | bat -n --language="$lang"
                 fi
                 return
             fi
@@ -195,9 +198,9 @@ view_with_tool() {
     # Fallback: try bat for syntax highlighting, otherwise use less
     if has_cmd bat; then
         if [[ -n "$file" ]]; then
-            bat --style=plain "$file" 2>/dev/null || less "$file"
+            bat -n --color=always "$file" 
         else
-            echo "$content" | bat --style=plain 2>/dev/null || echo "$content" | less
+            echo "$content" | bat -n 
         fi
     else
         if [[ -n "$file" ]]; then
@@ -228,6 +231,16 @@ main() {
 
     # Handle file argument
     local file="$1"
+
+    # Pass arguments (starting with -) through to bat/less
+    if [[ "$file" == -* ]]; then
+        if has_cmd bat; then
+            bat "$@"
+        else
+            less "$@"
+        fi
+        return
+    fi
 
     if [[ ! -f "$file" ]]; then
         echo "Error: '$file' is not a file" >&2
