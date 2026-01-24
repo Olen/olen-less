@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+#
+# olen-less - A smarter less that uses specialized tools for different file types
+#
+
+set -euo pipefail
+
+# Check if a command exists
+has_cmd() {
+    command -v "$1" &>/dev/null
+}
+
+# Detect content type from file content (first few bytes)
+detect_content_type() {
+    local content="$1"
+    local first_line
+    first_line=$(echo "$content" | head -n1)
+
+    # JSON detection
+    if [[ "$first_line" =~ ^[[:space:]]*[\{\[] ]]; then
+        echo "json"
+        return
+    fi
+
+    # Markdown detection (common patterns)
+    if [[ "$first_line" =~ ^#[[:space:]] ]] || \
+       [[ "$content" =~ \`\`\` ]] || \
+       [[ "$content" =~ ^\*\*.*\*\*$ ]] || \
+       [[ "$content" =~ ^---$ ]]; then
+        echo "markdown"
+        return
+    fi
+
+    # XML/HTML detection
+    if [[ "$first_line" =~ ^\<\?xml ]] || [[ "$first_line" =~ ^\<\!DOCTYPE ]] || \
+       [[ "$first_line" =~ ^\<html ]]; then
+        echo "xml"
+        return
+    fi
+
+    # YAML detection (starts with ---)
+    if [[ "$first_line" == "---" ]]; then
+        echo "yaml"
+        return
+    fi
+
+    echo "unknown"
+}
+
+# Get file extension
+get_extension() {
+    local file="$1"
+    local ext="${file##*.}"
+    echo "${ext,,}"  # lowercase
+}
+
+# Map extension to content type
+extension_to_type() {
+    local ext="$1"
+    case "$ext" in
+        md|markdown|mdown|mkd)
+            echo "markdown"
+            ;;
+        json|jsonl)
+            echo "json"
+            ;;
+        xml|xsl|xslt|svg|xhtml)
+            echo "xml"
+            ;;
+        yaml|yml)
+            echo "yaml"
+            ;;
+        csv)
+            echo "csv"
+            ;;
+        py)
+            echo "python"
+            ;;
+        sh|bash|zsh)
+            echo "shell"
+            ;;
+        *)
+            echo "unknown"
+            ;;
+    esac
+}
+
+# View content with the appropriate tool
+view_with_tool() {
+    local content_type="$1"
+    local file="$2"  # empty string for stdin
+    local content="$3"  # content for stdin, empty for file
+
+    case "$content_type" in
+        json)
+            if has_cmd jq; then
+                if [[ -n "$file" ]]; then
+                    jq -C '.' "$file" 2>/dev/null | less -R || less "$file"
+                else
+                    echo "$content" | jq -C '.' 2>/dev/null | less -R || echo "$content" | less
+                fi
+                return
+            fi
+            ;;
+        markdown)
+            if has_cmd glow; then
+                if [[ -n "$file" ]]; then
+                    glow -p "$file"
+                else
+                    echo "$content" | glow -p -
+                fi
+                return
+            elif has_cmd bat; then
+                if [[ -n "$file" ]]; then
+                    bat --style=plain --language=md "$file"
+                else
+                    echo "$content" | bat --style=plain --language=md
+                fi
+                return
+            fi
+            ;;
+        xml)
+            if has_cmd xmllint && has_cmd bat; then
+                if [[ -n "$file" ]]; then
+                    xmllint --format "$file" 2>/dev/null | bat --style=plain --language=xml || less "$file"
+                else
+                    echo "$content" | xmllint --format - 2>/dev/null | bat --style=plain --language=xml || echo "$content" | less
+                fi
+                return
+            elif has_cmd xmllint; then
+                if [[ -n "$file" ]]; then
+                    xmllint --format "$file" 2>/dev/null | less || less "$file"
+                else
+                    echo "$content" | xmllint --format - 2>/dev/null | less || echo "$content" | less
+                fi
+                return
+            fi
+            ;;
+        yaml)
+            if has_cmd yq && has_cmd bat; then
+                if [[ -n "$file" ]]; then
+                    yq -C '.' "$file" 2>/dev/null | less -R || less "$file"
+                else
+                    echo "$content" | yq -C '.' 2>/dev/null | less -R || echo "$content" | less
+                fi
+                return
+            elif has_cmd bat; then
+                if [[ -n "$file" ]]; then
+                    bat --style=plain --language=yaml "$file"
+                else
+                    echo "$content" | bat --style=plain --language=yaml
+                fi
+                return
+            fi
+            ;;
+        csv)
+            if has_cmd column && has_cmd bat; then
+                if [[ -n "$file" ]]; then
+                    bat -n --color=always "$file" | column -t -s',' | less -R
+                    # column -t -s',' "$file" | less -S
+                else
+                    echo "$content" | bat -n --color=always | column -t -s',' | less -R
+                fi
+                return
+            elif has_cmd column; then
+                if [[ -n "$file" ]]; then
+                    column -t -s',' "$file" | less -S
+                else
+                    echo "$content" | column -t -s',' | less -R
+                fi
+                return
+            elif has_cmd bat; then
+                if [[ -n "$file" ]]; then
+                    bat -n --color=always "$file"
+                else
+                    echo "$content" | bat -n --color=always 
+                fi
+                return
+            fi
+            ;;
+        python|shell)
+            if has_cmd bat; then
+                local lang="$content_type"
+                [[ "$lang" == "shell" ]] && lang="sh"
+                if [[ -n "$file" ]]; then
+                    bat --style=plain --language="$lang" "$file"
+                else
+                    echo "$content" | bat --style=plain --language="$lang"
+                fi
+                return
+            fi
+            ;;
+    esac
+
+    # Fallback: try bat for syntax highlighting, otherwise use less
+    if has_cmd bat; then
+        if [[ -n "$file" ]]; then
+            bat --style=plain "$file" 2>/dev/null || less "$file"
+        else
+            echo "$content" | bat --style=plain 2>/dev/null || echo "$content" | less
+        fi
+    else
+        if [[ -n "$file" ]]; then
+            less "$file"
+        else
+            echo "$content" | less
+        fi
+    fi
+}
+
+# Main logic
+main() {
+    # Handle stdin (piped content)
+    if [[ ! -t 0 ]]; then
+        local content
+        content=$(cat)
+        local content_type
+        content_type=$(detect_content_type "$content")
+        view_with_tool "$content_type" "" "$content"
+        return
+    fi
+
+    # No arguments - just run less
+    if [[ $# -eq 0 ]]; then
+        less
+        return
+    fi
+
+    # Handle file argument
+    local file="$1"
+
+    if [[ ! -f "$file" ]]; then
+        echo "Error: '$file' is not a file" >&2
+        exit 1
+    fi
+
+    # Determine content type from extension first
+    local ext
+    ext=$(get_extension "$file")
+    local content_type
+    content_type=$(extension_to_type "$ext")
+
+    # If extension didn't help, try to detect from content
+    if [[ "$content_type" == "unknown" ]]; then
+        local sample
+        sample=$(head -c 4096 "$file")
+        content_type=$(detect_content_type "$sample")
+    fi
+
+    view_with_tool "$content_type" "$file" ""
+}
+
+main "$@"

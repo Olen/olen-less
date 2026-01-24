@@ -1,0 +1,26 @@
+{
+  "name": "olen-less",
+  "version": "1.0.0",
+  "description": "A smarter less for different file types",
+  "author": "olen",
+  "features": [
+    "Auto-detection",
+    "Multiple tools",
+    "Graceful fallback"
+  ],
+  "supported_types": {
+    "markdown": [".md", ".markdown"],
+    "json": [".json", ".jsonl"],
+    "yaml": [".yaml", ".yml"],
+    "xml": [".xml", ".svg"]
+  },
+  "config": {
+    "color": true,
+    "pager": "less -R",
+    "nested": {
+      "deep": {
+        "value": 42
+      }
+    }
+  }
+}

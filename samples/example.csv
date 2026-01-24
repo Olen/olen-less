@@ -1,0 +1,8 @@
+tool,file_type,description,optional
+glow,markdown,Terminal markdown renderer,true
+jq,json,JSON processor and formatter,true
+bat,various,Syntax highlighting cat clone,true
+yq,yaml,YAML processor like jq,true
+xmllint,xml,XML formatter and validator,true
+column,csv,Table formatter,false
+less,fallback,Default pager,false

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+    <name>olen-less</name>
+    <version>1.0.0</version>
+    <description>A smarter less for different file types</description>
+
+    <author>
+        <name>olen</name>
+        <email>olen@example.com</email>
+    </author>
+
+    <features>
+        <feature id="1">
+            <name>Auto-detection</name>
+            <enabled>true</enabled>
+        </feature>
+        <feature id="2">
+            <name>Multiple tools</name>
+            <enabled>true</enabled>
+        </feature>
+        <feature id="3">
+            <name>Graceful fallback</name>
+            <enabled>true</enabled>
+        </feature>
+    </features>
+
+    <dependencies>
+        <dependency optional="true">glow</dependency>
+        <dependency optional="true">jq</dependency>
+        <dependency optional="true">bat</dependency>
+        <dependency optional="true">yq</dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,34 @@
+---
+# Sample YAML configuration file
+name: olen-less
+version: "1.0.0"
+
+metadata:
+  author: olen
+  license: MIT
+  repository: https://github.com/olen/olen-less
+
+features:
+  - name: Auto-detection
+    description: Detects file type from extension or content
+  - name: Multiple tools
+    description: Uses best available tool for each type
+  - name: Graceful fallback
+    description: Falls back to less when tools unavailable
+
+tools:
+  markdown:
+    preferred: glow
+    fallback: bat
+  json:
+    preferred: jq
+    options:
+      - "-C"  # colorize
+      - "."   # identity filter
+  yaml:
+    preferred: yq
+
+settings:
+  color_output: true
+  use_pager: true
+  detect_stdin: true
