@@ -1,0 +1,19 @@
+name: olen-less
+version: 1.0.0
+description: A smarter pager that detects file types
+
+dependencies:
+  required:
+    - bat
+    - less
+  optional:
+    - jq
+    - yq
+    - glow
+    - xmllint
+
+features:
+  - json_formatting
+  - yaml_highlighting
+  - markdown_rendering
+  - xml_pretty_print

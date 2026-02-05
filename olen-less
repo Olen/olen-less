@@ -32,32 +32,40 @@ detect_content_type() {
         after_bracket="${after_bracket#"$ws_prefix"}"
         # Check if it looks like JSON array content (not an INI section header)
         # Note: ] must be first in character class, - must be last
-        if [[ "$after_bracket" =~ ^[]{}\"0-9-] ]] || \
+        # Empty after_bracket means line is just "[" - likely JSON with content on next line
+        if [[ -z "$after_bracket" ]] || \
+           [[ "$after_bracket" =~ ^[]{}\"0-9-] ]] || \
            [[ "$after_bracket" =~ ^(true|false|null) ]]; then
             echo "json"
             return
         fi
     fi
 
-    # Markdown detection (common patterns)
-    if [[ "$first_line" =~ ^#[[:space:]] ]] || \
-       [[ "$content" =~ \`\`\` ]] || \
-       [[ "$content" =~ ^\*\*.*\*\*$ ]] || \
-       [[ "$content" =~ ^---$ ]]; then
-        echo "markdown"
-        return
-    fi
-
-    # XML/HTML detection
-    if [[ "$first_line" =~ ^\<\?xml ]] || [[ "$first_line" =~ ^\<\!DOCTYPE ]] || \
-       [[ "$first_line" =~ ^\<html ]]; then
+    # XML/HTML detection (case-insensitive for HTML)
+    if [[ "$first_line" =~ ^\<\?xml ]] || \
+       [[ "${first_line,,}" =~ ^\<\!doctype ]] || \
+       [[ "${first_line,,}" =~ ^\<html ]] || \
+       [[ "$first_line" =~ ^\<svg ]] || \
+       [[ "$first_line" =~ ^\<rss ]] || \
+       [[ "$first_line" =~ ^\<feed ]]; then
         echo "xml"
         return
     fi
 
-    # YAML detection (starts with ---)
-    if [[ "$first_line" == "---" ]]; then
+    # YAML detection
+    # Document marker or common key: value pattern (but not URLs with http:)
+    # Match "key: value" or "key:" (nested object marker)
+    if [[ "$first_line" == "---" ]] || \
+       [[ "$first_line" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*:([[:space:]]|$) && ! "$first_line" =~ ^https?:// ]]; then
         echo "yaml"
+        return
+    fi
+
+    # Markdown detection (common patterns)
+    # Headers, code blocks, or horizontal rules
+    if [[ "$first_line" =~ ^#[[:space:]] ]] || \
+       [[ "$content" == *\`\`\`* ]]; then
+        echo "markdown"
         return
     fi
 
