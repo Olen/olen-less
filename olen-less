@@ -39,6 +39,18 @@ detect_content_type() {
             echo "json"
             return
         fi
+        # If it looks like [section_name], it's likely INI
+        if [[ "$after_bracket" =~ ^[a-zA-Z0-9_-]+\] ]]; then
+            echo "ini"
+            return
+        fi
+    fi
+
+    # INI detection (key=value or key = value patterns, or ; comments)
+    if [[ "$first_line" =~ ^[[:space:]]*\; ]] || \
+       [[ "$first_line" =~ ^[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*= ]]; then
+        echo "ini"
+        return
     fi
 
     # XML/HTML detection (case-insensitive for HTML)
@@ -91,6 +103,9 @@ extension_to_type() {
             ;;
         toml)
             echo "toml"
+            ;;
+        ini|cfg|conf|cnf)
+            echo "ini"
             ;;
         xml|xsl|xslt|svg|xhtml)
             echo "xml"
@@ -190,6 +205,16 @@ view_with_tool() {
                     bat -n --language=toml "$file"
                 else
                     echo "$content" | bat -n --language=toml
+                fi
+                return
+            fi
+            ;;
+        ini)
+            if has_cmd bat; then
+                if [[ -n "$file" ]]; then
+                    bat -n --language=ini "$file"
+                else
+                    echo "$content" | bat -n --language=ini
                 fi
                 return
             fi

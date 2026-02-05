@@ -54,7 +54,7 @@ test_detection "JSON array multiline" "json" '[
 ]'
 test_detection "JSON empty array" "json" '[]'
 test_detection "JSON empty object" "json" '{}'
-test_detection "INI section (not JSON)" "unknown" '[section]'
+test_detection "INI section (not JSON)" "ini" '[section]'
 test_detection "INI with spaces (not JSON)" "unknown" '[Section Name]'
 
 echo ""
@@ -77,6 +77,14 @@ test_detection "SVG" "xml" '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
 test_detection "RSS" "xml" '<rss version="2.0"></rss>'
 
 echo ""
+echo "=== INI Detection ==="
+test_detection "INI section header" "ini" '[mysqld]
+datadir=/var/lib/mysql'
+test_detection "INI key=value" "ini" 'key=value'
+test_detection "INI key = value" "ini" 'key = value'
+test_detection "INI comment" "ini" '; this is a comment'
+
+echo ""
 echo "=== Markdown Detection ==="
 test_detection "Markdown header" "markdown" '# Hello World'
 test_detection "Markdown code block" "markdown" 'Some text
@@ -93,7 +101,7 @@ for f in "$SCRIPT_DIR"/samples/*; do
         yaml|yml) expected="yaml" ;;
         xml|html|svg) expected="xml" ;;
         md) expected="markdown" ;;
-        ini) expected="unknown" ;;  # INI should not be detected as JSON
+        ini) expected="ini" ;;
         *) expected="unknown" ;;
     esac
     test_file_detection "$f" "$expected"
