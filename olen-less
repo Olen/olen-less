@@ -17,9 +17,26 @@ detect_content_type() {
     first_line=$(echo "$content" | head -n1)
 
     # JSON detection
-    if [[ "$first_line" =~ ^[[:space:]]*[\{\[] ]]; then
+    # Objects starting with { are likely JSON
+    if [[ "$first_line" =~ ^[[:space:]]*\{ ]]; then
         echo "json"
         return
+    fi
+    # Arrays starting with [ need more care to distinguish from INI sections
+    # INI sections look like [section_name] - text followed by ]
+    # JSON arrays have: [], [{, [", [digit, [true, [false, [null
+    if [[ "$first_line" =~ ^[[:space:]]*\[ ]]; then
+        # Strip the opening bracket and any following whitespace
+        local after_bracket="${first_line#*[}"
+        local ws_prefix="${after_bracket%%[![:space:]]*}"
+        after_bracket="${after_bracket#"$ws_prefix"}"
+        # Check if it looks like JSON array content (not an INI section header)
+        # Note: ] must be first in character class, - must be last
+        if [[ "$after_bracket" =~ ^[]{}\"0-9-] ]] || \
+           [[ "$after_bracket" =~ ^(true|false|null) ]]; then
+            echo "json"
+            return
+        fi
     fi
 
     # Markdown detection (common patterns)
