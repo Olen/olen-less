@@ -158,9 +158,9 @@ view_with_tool() {
                 return
             elif has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    bat -n --language=md "$file"
+                    bat -p --language=md "$file"
                 else
-                    echo "$content" | bat -n --language=md
+                    echo "$content" | bat -p --language=md
                 fi
                 return
             fi
@@ -168,9 +168,9 @@ view_with_tool() {
         xml)
             if has_cmd xmllint && has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    xmllint --format "$file" 2>/dev/null | bat -n --language=xml || less "$file"
+                    xmllint --format "$file" 2>/dev/null | bat -p --language=xml || less "$file"
                 else
-                    echo "$content" | xmllint --format - 2>/dev/null | bat -n --language=xml || echo "$content" | less
+                    echo "$content" | xmllint --format - 2>/dev/null | bat -p --language=xml || echo "$content" | less
                 fi
                 return
             elif has_cmd xmllint; then
@@ -192,9 +192,9 @@ view_with_tool() {
                 return
             elif has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    bat -n --language=yaml "$file"
+                    bat -p --language=yaml "$file"
                 else
-                    echo "$content" | bat -n --language=yaml
+                    echo "$content" | bat -p --language=yaml
                 fi
                 return
             fi
@@ -202,9 +202,9 @@ view_with_tool() {
         toml)
             if has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    bat -n --language=toml "$file"
+                    bat -p --language=toml "$file"
                 else
-                    echo "$content" | bat -n --language=toml
+                    echo "$content" | bat -p --language=toml
                 fi
                 return
             fi
@@ -212,9 +212,9 @@ view_with_tool() {
         ini)
             if has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    bat -n --language=ini "$file"
+                    bat -p --language=ini "$file"
                 else
-                    echo "$content" | bat -n --language=ini
+                    echo "$content" | bat -p --language=ini
                 fi
                 return
             fi
@@ -222,10 +222,10 @@ view_with_tool() {
         csv)
             if has_cmd column && has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    bat -n --color=always "$file" | column -t -s',' | less -R
+                    bat -p --color=always "$file" | column -t -s',' | less -R
                     # column -t -s',' "$file" | less -S
                 else
-                    echo "$content" | bat -n --color=always | column -t -s',' | less -R
+                    echo "$content" | bat -p --color=always | column -t -s',' | less -R
                 fi
                 return
             elif has_cmd column; then
@@ -237,9 +237,9 @@ view_with_tool() {
                 return
             elif has_cmd bat; then
                 if [[ -n "$file" ]]; then
-                    bat -n --color=always "$file"
+                    bat -p --color=always "$file"
                 else
-                    echo "$content" | bat -n --color=always 
+                    echo "$content" | bat -p --color=always 
                 fi
                 return
             fi
@@ -249,9 +249,9 @@ view_with_tool() {
                 local lang="$content_type"
                 [[ "$lang" == "shell" ]] && lang="sh"
                 if [[ -n "$file" ]]; then
-                    bat -n --language="$lang" "$file"
+                    bat -p --language="$lang" "$file"
                 else
-                    echo "$content" | bat -n --language="$lang"
+                    echo "$content" | bat -p --language="$lang"
                 fi
                 return
             fi
@@ -290,9 +290,9 @@ view_with_tool() {
                 fi
 
                 if [[ -n "$lang" ]]; then
-                    bat -n --language="$lang" "$file"
+                    bat -p --language="$lang" "$file"
                 else
-                    bat -n "$file"
+                    bat -p "$file"
                 fi
                 return
             fi
@@ -302,9 +302,9 @@ view_with_tool() {
     # Fallback: try bat for syntax highlighting, otherwise use less
     if has_cmd bat; then
         if [[ -n "$file" ]]; then
-            bat -n --color=always "$file" 
+            bat -p --color=always "$file" 
         else
-            echo "$content" | bat -n 
+            echo "$content" | bat -p 
         fi
     else
         if [[ -n "$file" ]]; then
